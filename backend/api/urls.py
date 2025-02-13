@@ -13,4 +13,8 @@ router.register(r'widgets', views.WidgetViewSet)
 urlpatterns = [
     path('', views.api_root, name='api-root'),
     path('', include(router.urls)),
+    path('login/', views.login_view, name='login'),
+    path('websites/', views.get_websites, name='websites'),
+    path('websites/update', views.update_website, name='update-website'),
+    path('websites/upload-image', views.upload_image, name='upload-image'),
 ] 

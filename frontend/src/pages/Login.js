@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-import { Box, Container, TextField, Button, Typography, Paper } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Container, TextField, Button, Typography, Paper, Alert } from '@mui/material';
+import { authService } from '../services/api';
 
 function Login() {
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: '',
     password: ''
   });
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implementacja logiki logowania
-    console.log('Login attempt:', credentials);
+    try {
+      const response = await authService.login(credentials);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', response.data.username);
+      navigate('/');
+    } catch (error) {
+      setError('Nieprawidłowe dane logowania');
+    }
   };
 
   return (
@@ -27,6 +37,7 @@ function Login() {
           <Typography component="h1" variant="h5" align="center">
             Logowanie
           </Typography>
+          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             <TextField
               margin="normal"

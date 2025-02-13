@@ -26,11 +26,11 @@ REM Wykonanie migracji
 python manage.py makemigrations api
 python manage.py migrate
 
+REM Generowanie danych logowania
+python manage.py generate_credentials
+
 REM Zbieranie plików statycznych
 python manage.py collectstatic --noinput
-
-REM Tworzenie superużytkownika
-python manage.py createsuperuser
 
 REM Uruchomienie serwera
 python manage.py runserver

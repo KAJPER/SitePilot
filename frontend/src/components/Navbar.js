@@ -1,28 +1,46 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/api';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 function Navbar() {
-  return (
-    <AppBar position="static">
-      <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Panel Administratora
-        </Typography>
-        <Box>
-          <Button color="inherit" component={RouterLink} to="/">
-            Dashboard
-          </Button>
-          <Button color="inherit" component={RouterLink} to="/pages">
-            Pages
-          </Button>
-          <Button color="inherit" component={RouterLink} to="/login">
-            Login
-          </Button>
-        </Box>
-      </Toolbar>
-    </AppBar>
-  );
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        authService.logout();
+        navigate('/login');
+    };
+
+    if (!authService.isAuthenticated()) {
+        return null;
+    }
+
+    return (
+        <AppBar 
+            position="static" 
+            sx={{ 
+                backgroundColor: 'white',
+                color: 'black',
+                boxShadow: 1
+            }}
+        >
+            <Toolbar>
+                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                    Panel Administratora
+                </Typography>
+                <Box>
+                    <Button 
+                        color="inherit" 
+                        onClick={handleLogout}
+                        startIcon={<LogoutIcon />}
+                    >
+                        Wyloguj
+                    </Button>
+                </Box>
+            </Toolbar>
+        </AppBar>
+    );
 }
 
 export default Navbar;

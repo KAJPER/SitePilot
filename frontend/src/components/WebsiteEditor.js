@@ -30,18 +30,25 @@ function WebsiteEditor({ open, onClose, websitePath }) {
             fetch(`http://localhost:8000${websitePath}`)
                 .then(response => response.text())
                 .then(htmlContent => {
-                    // Dodajemy obsługę ikon
                     const modifiedHtml = htmlContent.replace(
                         /(<(?:p|h[1-6]|span|div|button|a)[^>]*>)(.*?)(<\/(?:p|h[1-6]|span|div|button|a)>)|(<img[^>]*>)|(<i class="fa[bs]? fa-([^"]*)"[^>]*><\/i>)/g,
                         (match, openTag, content, closeTag, imgTag, iconTag, iconName) => {
                             const id = `editable-${Math.random().toString(36).substr(2, 9)}`;
                             
                             if (imgTag) {
+                                const srcMatch = imgTag.match(/src="([^"]*)"/);
+                                let src = srcMatch ? srcMatch[1] : '';
+                                
+                                if (!src.startsWith('http')) {
+                                    src = src.startsWith('/') ? src : `/${src}`;
+                                    src = `/websites/${websitePath.split('/')[2]}${src}`;
+                                }
+                                
                                 setEditableElements(prev => ({
                                     ...prev,
                                     [id]: {
                                         type: 'image',
-                                        src: imgTag.match(/src="([^"]*)"/)?.[1] || '',
+                                        src: src,
                                         originalTag: imgTag
                                     }
                                 }));
@@ -135,7 +142,12 @@ function WebsiteEditor({ open, onClose, websitePath }) {
                     ...prev,
                     [selectedImageElement]: {
                         ...prev[selectedImageElement],
-                        src: imageUrl
+                        type: 'image',
+                        src: imageUrl,
+                        originalTag: prev[selectedImageElement].originalTag.replace(
+                            /src="[^"]*"/,
+                            `src="images/${imageUrl.split('/').pop()}"`
+                        )
                     }
                 }));
             } else {
@@ -195,13 +207,20 @@ function WebsiteEditor({ open, onClose, websitePath }) {
             Object.entries(editableElements).forEach(([id, element]) => {
                 if (element.type === 'image') {
                     const regex = new RegExp(`<div class="editable-image" id="${id}">.*?</div>`);
-                    const newImgTag = element.originalTag.replace(/src="[^"]*"/, `src="${element.src}"`);
+                    const fileName = element.src.split('/').pop();
+                    const newImgTag = element.originalTag.replace(
+                        /src="[^"]*"/,
+                        `src="images/${fileName}"`
+                    );
                     finalHtml = finalHtml.replace(regex, newImgTag);
-                } else {
+                } else if (element.type === 'text') {
                     const regex = new RegExp(`<span class="editable" id="${id}">.*?</span>`);
-                    finalHtml = finalHtml.replace(regex, element.content || '');
+                    finalHtml = finalHtml.replace(regex, element.content);
                 }
             });
+
+            // Usuń podwójne "images/images/" jeśli występują
+            finalHtml = finalHtml.replace(/src="images\/images\//g, 'src="images/');
 
             const response = await fetch('http://localhost:8000/api/websites/update', {
                 method: 'POST',
@@ -219,6 +238,8 @@ function WebsiteEditor({ open, onClose, websitePath }) {
 
             if (response.ok) {
                 onClose();
+                // Odśwież stronę po zapisaniu
+                window.location.reload();
             } else {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Nie udało się zapisać zmian');
@@ -319,13 +340,19 @@ function WebsiteEditor({ open, onClose, websitePath }) {
                                     );
                                 } else if (domNode.attribs.class === 'editable-image') {
                                     const id = domNode.attribs.id;
+                                    const element = editableElements[id];
+                                    const imageSrc = element?.src 
+                                        ? `http://localhost:8000${element.src}`
+                                        : null;
                                     return (
                                         <div className="editable-image" onClick={() => handleImageClick(id)}>
-                                            <img 
-                                                src={editableElements[id]?.src} 
-                                                alt="" 
-                                                style={{ maxWidth: '100%' }}
-                                            />
+                                            {imageSrc && (
+                                                <img 
+                                                    src={imageSrc}
+                                                    alt="" 
+                                                    style={{ maxWidth: '100%' }}
+                                                />
+                                            )}
                                             <div className="image-overlay">
                                                 <Tooltip title="Zmień zdjęcie">
                                                     <IconButton color="primary">

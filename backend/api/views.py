@@ -118,21 +118,16 @@ def upload_image(request):
         # Generuj unikalną nazwę pliku
         filename = f"{int(time.time())}_{image.name}"
         
-        # Użyj forward slasha dla URL
-        file_path = f'images/{filename}'  # URL path
-        
-        # Użyj os.path.join tylko dla ścieżki systemu plików
-        full_path = os.path.join(settings.BASE_DIR.parent, 'websites', website_dir, 'images', filename)
-        
         # Zapisz plik
+        full_path = os.path.join(images_dir, filename)
+        
         with open(full_path, 'wb+') as destination:
             for chunk in image.chunks():
                 destination.write(chunk)
 
-        # Zwróć URL z forward slashami
         return JsonResponse({
             'message': 'Zdjęcie zostało przesłane',
-            'imageUrl': f'/websites/{website_dir}/{file_path}'
+            'imageUrl': f'/websites/{website_dir}/images/{filename}'
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
